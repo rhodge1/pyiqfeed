@@ -670,6 +670,8 @@ class QuoteConn(FeedConn):
                      # TODO: Parse:
                      'Most Recent Trade':
                          ('Most Recent Trade', 'f8', fr.read_float64),
+                     'Most Recent Trade Aggressor':
+                         ('Most Recent Trade Aggressor', 'u8', fr.read_uint8),
                      'Most Recent Trade Conditions':
                          ('Most Recent Trade Conditions', 'S16', lambda x: x),
                      # todo: Parse
