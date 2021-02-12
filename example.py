@@ -278,8 +278,8 @@ def get_equity_option_chain(ticker: str):
             month_codes="".join(iq.LookupConn.call_month_letters +
                                 iq.LookupConn.put_month_letters),
             near_months=None,
-            include_binary=True,
-            filt_type=0, filt_val_1=None, filt_val_2=None)
+            filt_type=0, filt_val_1=None, filt_val_2=None,
+            include_non_std_options=True)
         print("Currently trading options for %s" % ticker)
         print(e_opt)
         lookup_conn.remove_listener(lookup_listener)
@@ -423,7 +423,7 @@ if __name__ == "__main__":
         get_reference_data()
     if results.lookups_and_chains:
         get_ticker_lookups("SPY")
-        get_equity_option_chain("SPY")
+        get_equity_option_chain("SPX")
         get_futures_chain("@VX")
         get_futures_spread_chain("@VX")
         # get_futures_options_chain("@VX")

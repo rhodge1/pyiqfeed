@@ -3041,10 +3041,10 @@ class LookupConn(FeedConn):
     def request_equity_option_chain(self, symbol: str, opt_type: str = 'pc',
                                     month_codes: str = None,
                                     near_months: int = None,
-                                    include_binary: bool = True,
                                     filt_type: int = 0,
                                     filt_val_1: float = None,
                                     filt_val_2: float = None,
+                                    include_non_std_options: bool = False,
                                     timeout: int = None) -> dict:
         """
         Request a chain of options on an equity.
@@ -3053,16 +3053,16 @@ class LookupConn(FeedConn):
         :param opt_type: 'p'=Puts, 'c'=Calls, 'pc'=Both.
         :param month_codes: String of months you want.
         :param near_months: Number of near months (ignore months).
-        :param include_binary: Include binary options.
         :param filt_type: 0=No filter 1=strike_range, 2=In/Out of money.
         :param filt_val_1: Lower strike or Num contracts in the money.
         :param filt_val_2: Upper string or Num Contracts out of the money.
+        :param include_non_std_options: True/False to include non-standard options (like weeklies).
         :param timeout: Die after timeout secs, Default None.
         :return: List of Options tickers.
 
         CEO,[Symbol],[Puts/Calls],[Month Codes],[Near Months],
         [BinaryOptions],[Filter Type],[Filter Value One],[Filter Value Two],
-        [RequestID]<CR><LF>
+        [RequestID],[IncludeNonStandardOptions]<CR><LF>
 
         """
         assert (symbol is not None) and (symbol != '')
@@ -3094,12 +3094,13 @@ class LookupConn(FeedConn):
             assert filt_val_2 is not None and filt_val_2 > 0
         if filt_type == 1:
             assert filt_val_1 < filt_val_2
+        assert include_non_std_options in (True, False)
         req_id = self._get_next_req_id()
         self._setup_request_data(req_id)
-        req_cmd = "CEO,%s,%s,%s,%s,%d,%d,%s,%s,%s\r\n" % (
+        req_cmd = "CEO,%s,%s,%s,%s,%d,%s,%s,%s,%d\r\n" % (
             symbol, opt_type, fr.blob_to_str(month_codes),
-            fr.blob_to_str(near_months), include_binary, filt_type,
-            fr.blob_to_str(filt_val_1), fr.blob_to_str(filt_val_2), req_id)
+            fr.blob_to_str(near_months), filt_type,
+            fr.blob_to_str(filt_val_1), fr.blob_to_str(filt_val_2), req_id, include_non_std_options)
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
         data = self._read_option_chain(req_id)
