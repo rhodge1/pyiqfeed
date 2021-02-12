@@ -2223,25 +2223,27 @@ class HistoryConn(FeedConn):
             return data
 
     def request_daily_data(self, ticker: str, num_days: int,
-                           ascend: bool = False, timeout: int = None):
+                           ascend: bool = False, include_partial: bool = True,
+                           timeout: int = None):
         """
         Request daily bars for the previous num_days.
 
         :param ticker: Symbol
         :param num_days: Number of days. 1 means today only.
         :param ascend: True means oldest data first, False opposite.
+        :param include_partial: False to exclude, (default) True to include partial datapoint for current day
         :param timeout: Wait timeout seconds. Default None
         :return: A numpy array with dtype HistoryConn.daily_type
 
         HDX,[Symbol],[MaxDatapoints],[DataDirection],[RequestID],
-        [DatapointsPerSend]<CR><LF>
+        [DatapointsPerSend],[IncludePartialDatapoint]<CR><LF>
 
         """
         req_id = self._get_next_req_id()
         self._setup_request_data(req_id)
         pts_per_batch = min((100, num_days))
-        req_cmd = ("HDX,%s,%d,%d,%s,%d\r\n" % (
-            ticker, num_days, ascend, req_id, pts_per_batch))
+        req_cmd = ("HDX,%s,%d,%d,%s,%d,%d\r\n" % (
+            ticker, num_days, ascend, req_id, pts_per_batch, include_partial))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
         data = self._read_daily_data(req_id)
@@ -2260,7 +2262,7 @@ class HistoryConn(FeedConn):
     def request_daily_data_for_dates(self, ticker: str, bgn_dt: datetime.date,
                                      end_dt: datetime.date,
                                      ascend: bool = False, max_days: int =
-                                     None,
+                                     None, include_partial: bool = True,
                                      timeout: int = None):
         """
         Request daily bars for a specific period.
@@ -2270,11 +2272,12 @@ class HistoryConn(FeedConn):
         :param end_dt: Latest DAte
         :param ascend: True means oldest data first, False opposite.
         :param max_days: Maximum number of days to get data for.
+        :param include_partial: False to exclude, (default) True to include partial datapoint for current day
         :param timeout: Wait timeout seconds. Default None
         :return: A numpy array with dtype HistoryConn.daily_type
 
         HDT,[Symbol],[BeginDate],[EndDate],[MaxDatapoints],[DataDirection],
-        [RequestID],[DatapointsPerSend]<CR><LF>
+        [RequestID],[DatapointsPerSend],[IncludePartialDatapoint]<CR><LF>
 
         """
         req_id = self._get_next_req_id()
@@ -2285,8 +2288,8 @@ class HistoryConn(FeedConn):
         pts_per_batch = 100
         if max_days is not None:
             pts_per_batch = min((100, max_days))
-        req_cmd = ("HDT,%s,%s,%s,%s,%d,%s,%d\r\n" % (
-            ticker, bgn_str, end_str, md_str, ascend, req_id, pts_per_batch))
+        req_cmd = ("HDT,%s,%s,%s,%s,%d,%s,%d,%d\r\n" % (
+            ticker, bgn_str, end_str, md_str, ascend, req_id, pts_per_batch, include_partial))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
         data = self._read_daily_data(req_id)
@@ -2303,25 +2306,26 @@ class HistoryConn(FeedConn):
             return data
 
     def request_weekly_data(self, ticker: str, num_weeks: int,
-                            ascend: bool = False, timeout: int = None):
+                            ascend: bool = False, include_partial: bool = True, timeout: int = None):
         """
         Request weekly bars for the last num_weeks.
 
         :param ticker: Symbol
         :param num_weeks: Number of weeks
         :param ascend: True means oldest data first, False opposite.
+        :param include_partial: False to exclude, (default) True to include partial datapoint up to current day
         :param timeout: Wait timeout seconds. Default None
         :return: A numpy array with dtype HistoryConn.daily_type
 
         HWX,[Symbol],[MaxDatapoints],[DataDirection],[RequestID],
-        [DatapointsPerSend]<CR><LF>
+        [DatapointsPerSend],[IncludePartialDatapoint]<CR><LF>
 
         """
         req_id = self._get_next_req_id()
         self._setup_request_data(req_id)
         pts_per_batch = min((100, num_weeks))
-        req_cmd = ("HWX,%s,%d,%d,%s,%d\r\n" % (
-            ticker, num_weeks, ascend, req_id, pts_per_batch))
+        req_cmd = ("HWX,%s,%d,%d,%s,%d,%d\r\n" % (
+            ticker, num_weeks, ascend, req_id, pts_per_batch, include_partial))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
         data = self._read_daily_data(req_id)
@@ -2338,25 +2342,26 @@ class HistoryConn(FeedConn):
             return data
 
     def request_monthly_data(self, ticker: str, num_months: int,
-                             ascend: bool = False, timeout: int = None):
+                             ascend: bool = False, include_partial: bool = True, timeout: int = None):
         """
         Request monthly bars for the last num_months.
 
         :param ticker: Symbol
         :param num_months: Number of months.
         :param ascend: True means oldest data first, False opposite.
+        :param include_partial: False to exclude, (default) True to include partial datapoint up to current day
         :param timeout: Wait timeout seconds. Default None
         :return: A numpy array with dtype HistoryConn.daily_type
 
         HMX,[Symbol],[MaxDatapoints],[DataDirection],[RequestID],
-        [DatapointsPerSend]<CR><LF>
+        [DatapointsPerSend],[IncludePartialDatapoint]<CR><LF>
 
         """
         req_id = self._get_next_req_id()
         self._setup_request_data(req_id)
         pts_per_batch = min((100, num_months))
-        req_cmd = ("HMX,%s,%d,%d,%s,%d\r\n" % (
-            ticker, num_months, ascend, req_id, pts_per_batch))
+        req_cmd = ("HMX,%s,%d,%d,%s,%d,%d\r\n" % (
+            ticker, num_months, ascend, req_id, pts_per_batch, include_partial))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
         data = self._read_daily_data(req_id)
