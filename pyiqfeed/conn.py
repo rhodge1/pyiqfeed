@@ -1696,7 +1696,7 @@ class HistoryConn(FeedConn):
                           ('last_type', 'S1'), ('mkt_ctr', 'u4'),
                           ('tot_vlm', 'u8'), ('bid', 'f8'), ('ask', 'f8'),
                           ('cond1', 'u1'), ('cond2', 'u1'), ('cond3', 'u1'),
-                          ('cond4', 'u1')])
+                          ('cond4', 'u1'), ('trd_aggr', 'u4'), ('day_code', 'u1')])
     tick_h5_type = np.dtype([('tick_id', 'u8'),
                              ('date', 'i8'), ('time', 'i8'),
                              ('last', 'f8'), ('last_sz', 'u8'),
@@ -1820,7 +1820,6 @@ class HistoryConn(FeedConn):
                 data[line_num]['tick_id'] = np.uint64(dl[7])
                 data[line_num]['last_type'] = dl[8]
                 data[line_num]['mkt_ctr'] = np.uint32(dl[9])
-
                 cond_str = dl[10]
                 num_cond = len(cond_str) / 2
                 if num_cond > 0:
@@ -1842,6 +1841,8 @@ class HistoryConn(FeedConn):
                     data[line_num]['cond4'] = np.uint8(int(cond_str[6:8], 16))
                 else:
                     data[line_num]['cond4'] = 0
+                data[line_num]['trd_aggr'] = np.uint32(dl[11])
+                data[line_num]['day_code'] = np.uint8(dl[12])
 
                 line_num += 1
                 if line_num >= res.num_pts:
