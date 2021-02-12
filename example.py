@@ -423,7 +423,7 @@ if __name__ == "__main__":
         get_reference_data()
     if results.lookups_and_chains:
         get_ticker_lookups("SPY")
-        get_equity_option_chain("SPX")
+        get_equity_option_chain("SPY")
         get_futures_chain("@VX")
         get_futures_spread_chain("@VX")
         # get_futures_options_chain("@VX")
