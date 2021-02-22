@@ -600,7 +600,7 @@ class QuoteConn(FeedConn):
                         ('Session Open Time', 'u8'),
                         ('Session Close Time', 'u8'),
                         ('Base Currency', 'S3'),
-                        ('Contract Size', 'f8'),
+                        ('Contract Size', 'S128'),
                         ('Contract Months', 'S12'),
                         ('Minimum Tick Size', 'f8'),
                         ('First Delivery Date', 'M8[D]'),
@@ -931,7 +931,7 @@ class QuoteConn(FeedConn):
         msg['Session Open Time'] = fr.read_hhmmss(fields[49])
         msg['Session Close Time'] = fr.read_hhmmss(fields[50])
         msg['Base Currency'] = fields[51]
-        msg['Contract Size'] = fr.read_float64(fields[52])
+        msg['Contract Size'] = fields[52]
         msg['Contract Months'] = fields[53]
         msg['Minimum Tick Size'] = fr.read_float64(fields[54])
         msg['First Delivery Date'] = fr.read_mmddccyy(fields[55])
