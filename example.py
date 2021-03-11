@@ -81,7 +81,7 @@ def get_live_interval_bars(ticker: str, bar_len: int, seconds: int):
 
     with iq.ConnConnector([bar_conn]) as connector:
         bar_conn.watch(symbol=ticker, interval_len=bar_len,
-                       interval_type='s', update=1, lookback_bars=10)
+                       interval_type='s', update=1, lookback_days=1)
         time.sleep(seconds)
 
 
@@ -205,7 +205,7 @@ def get_daily_data(ticker: str, num_days: int):
 
     with iq.ConnConnector([hist_conn]) as connector:
         try:
-            daily_data = hist_conn.request_daily_data(ticker, num_days)
+            daily_data = hist_conn.request_daily_data(ticker, num_days, include_partial=False)
             print(daily_data)
         except (iq.NoDataError, iq.UnauthorizedError) as err:
             print("No data returned because {0}".format(err))
@@ -294,7 +294,7 @@ def get_futures_chain(ticker: str):
         f_syms = lookup_conn.request_futures_chain(
             symbol=ticker,
             month_codes="".join(iq.LookupConn.futures_month_letters),
-            years="67",
+            years=''.join([str(x) for x in range(0, 10)]),
             near_months=None,
             timeout=None)
         print("Futures symbols with underlying %s" % ticker)
@@ -311,7 +311,7 @@ def get_futures_spread_chain(ticker: str):
         f_syms = lookup_conn.request_futures_spread_chain(
             symbol=ticker,
             month_codes="".join(iq.LookupConn.futures_month_letters),
-            years="67",
+            years=''.join([str(x) for x in range(0, 10)]),
             near_months=None,
             timeout=None)
         print("Futures Spread symbols with underlying %s" % ticker)
@@ -327,9 +327,8 @@ def get_futures_options_chain(ticker: str):
     with iq.ConnConnector([lookup_conn]) as connector:
         f_syms = lookup_conn.request_futures_option_chain(
             symbol=ticker,
-            month_codes="".join(iq.LookupConn.call_month_letters +
-                                iq.LookupConn.put_month_letters),
-            years="67",
+            month_codes="".join(iq.LookupConn.futures_month_letters),
+            years=''.join([str(x) for x in range(0, 10)]),
             near_months=None,
             timeout=None)
         print("Futures Option symbols with underlying %s" % ticker)
@@ -396,36 +395,38 @@ if __name__ == "__main__":
                         help="Lookups and Chains")
     parser.add_argument("-n", action='store_true', dest='news',
                         help="News related stuff")
+    parser.add_argument("--syms", nargs='+', help="Symbols to use.")
     results = parser.parse_args()
 
     launch_service()
 
-    if results.level_1:
-        get_level_1_quotes_and_trades(ticker="SPY", seconds=30)
-    if results.regional_quotes:
-        get_regional_quotes(ticker="SPY", seconds=120)
-    if results.trade_updates:
-        get_trades_only(ticker="SPY", seconds=30)
-    if results.interval_data:
-        get_live_interval_bars(ticker="SPY", bar_len=5, seconds=30)
-    if results.admin_socket:
-        get_administrative_messages(seconds=30)
-    if results.historical_tickdata:
-        get_tickdata(ticker="SPY", max_ticks=100, num_days=4)
-    if results.historical_bars:
-        get_historical_bar_data(ticker="SPY",
-                                bar_len=60,
-                                bar_unit='s',
-                                num_bars=100)
-    if results.historical_daily_data:
-        get_daily_data(ticker="SPY", num_days=10)
-    if results.reference_data:
-        get_reference_data()
-    if results.lookups_and_chains:
-        get_ticker_lookups("SPY")
-        get_equity_option_chain("SPY")
-        get_futures_chain("@VX")
-        get_futures_spread_chain("@VX")
-        # get_futures_options_chain("@VX")
-    if results.news:
-        get_news()
+    for sym in results.syms or ['SPY']:
+        if results.level_1:
+            get_level_1_quotes_and_trades(ticker=sym, seconds=60)
+        if results.regional_quotes:
+            get_regional_quotes(ticker=sym, seconds=120)
+        if results.trade_updates:
+            get_trades_only(ticker=sym, seconds=30)
+        if results.interval_data:
+            get_live_interval_bars(ticker=sym, bar_len=3600, seconds=100)
+        if results.admin_socket:
+            get_administrative_messages(seconds=30)
+        if results.historical_tickdata:
+            get_tickdata(ticker=sym, max_ticks=20, num_days=1)
+        if results.historical_bars:
+            get_historical_bar_data(ticker=sym,
+                                    bar_len=60*60,
+                                    bar_unit='s',
+                                    num_bars=100)
+        if results.historical_daily_data:
+            get_daily_data(ticker=sym, num_days=100)
+        if results.reference_data:
+            get_reference_data()
+        if results.lookups_and_chains:
+            # get_ticker_lookups(sym)
+            # get_equity_option_chain(sym)
+            # get_futures_chain(sym)
+            # get_futures_spread_chain(sym)
+            get_futures_options_chain(sym)
+        if results.news:
+            get_news()

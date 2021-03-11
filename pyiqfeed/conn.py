@@ -1851,6 +1851,58 @@ class HistoryConn(FeedConn):
                     assert line_num >= res.num_pts
             return data
 
+    def _read_ticks_arctic(self, req_id: str) -> np.array:
+        """Get buffer for req_id and transform to a numpy array of ticks."""
+        res = self._get_data_buf(req_id)
+        if res.failed:
+            return np.array([res.err_msg], dtype='object')
+        else:
+            data = np.empty(res.num_pts, HistoryConn.tick_type)
+            line_num = 0
+            while res.raw_data and (line_num < res.num_pts):
+                dl = res.raw_data.popleft()
+                (dt, tm) = fr.read_posix_ts_us(dl[1])
+                data[line_num]['date'] = dt
+                data[line_num]['time'] = tm
+                data[line_num]['last'] = np.float64(dl[2])
+                data[line_num]['last_sz'] = np.int64(dl[3])
+                data[line_num]['tot_vlm'] = np.int64(dl[4])
+                data[line_num]['bid'] = np.float64(dl[5])
+                data[line_num]['ask'] = np.float64(dl[6])
+                data[line_num]['tick_id'] = np.int64(dl[7])
+                data[line_num]['last_type'] = dl[8]
+                data[line_num]['mkt_ctr'] = np.int32(dl[9])
+                cond_str = dl[10]
+                num_cond = len(cond_str) / 2
+                if num_cond > 0:
+                    data[line_num]['cond1'] = np.int8(int(cond_str[0:2], 16))
+                else:
+                    data[line_num]['cond1'] = 0
+
+                if num_cond > 1:
+                    data[line_num]['cond2'] = np.int8(int(cond_str[2:4], 16))
+                else:
+                    data[line_num]['cond2'] = 0
+
+                if num_cond > 2:
+                    data[line_num]['cond3'] = np.int8(int(cond_str[4:6], 16))
+                else:
+                    data[line_num]['cond3'] = 0
+
+                if num_cond > 3:
+                    data[line_num]['cond4'] = np.int8(int(cond_str[6:8], 16))
+                else:
+                    data[line_num]['cond4'] = 0
+                data[line_num]['trd_aggr'] = np.int32(dl[11])
+                data[line_num]['day_code'] = np.int8(dl[12])
+
+                line_num += 1
+                if line_num >= res.num_pts:
+                    assert len(res.raw_data) == 0
+                if len(res.raw_data) == 0:
+                    assert line_num >= res.num_pts
+            return data
+
     def request_ticks(self, ticker: str, max_ticks: int, ascend: bool = False,
                       timeout: int = None) -> np.array:
         """
@@ -1873,7 +1925,7 @@ class HistoryConn(FeedConn):
             ticker, max_ticks, ascend, req_id, pts_per_batch))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_ticks(req_id)
+        data = self._read_ticks_arctic(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
