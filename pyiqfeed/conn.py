@@ -1690,7 +1690,7 @@ class HistoryConn(FeedConn):
     # Tick data is returned as a numpy array of this dtype. Note that
     # "tick-data" in IQFeed parlance means every trade with the latest top of
     # book quote at the time of the trade, NOT every quote and every trade.
-    tick_type = np.dtype([('datetime', 'U26'),
+    tick_type = np.dtype([('date', 'U26'),
                           ('last', 'f8'), ('last_sz', 'i8'),
                           ('tot_vlm', 'i8'), ('bid', 'f8'), ('ask', 'f8'),
                           ('tick_id', 'i8'), ('last_type', 'U1'), ('mkt_ctr', 'i4'),
