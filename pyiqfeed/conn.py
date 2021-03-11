@@ -1972,7 +1972,7 @@ class HistoryConn(FeedConn):
             pts_per_batch))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_ticks(req_id)
+        data = self._read_ticks_arctic(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
@@ -2024,7 +2024,7 @@ class HistoryConn(FeedConn):
             pts_per_batch))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_ticks(req_id)
+        data = self._read_ticks_arctic(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
