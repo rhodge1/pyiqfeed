@@ -419,14 +419,14 @@ if __name__ == "__main__":
                                     bar_unit='s',
                                     num_bars=100)
         if results.historical_daily_data:
-            get_daily_data(ticker=sym, num_days=100)
+            get_daily_data(ticker=sym, num_days=2000)
         if results.reference_data:
             get_reference_data()
         if results.lookups_and_chains:
-            # get_ticker_lookups(sym)
+            get_ticker_lookups(sym)
             # get_equity_option_chain(sym)
             # get_futures_chain(sym)
             # get_futures_spread_chain(sym)
-            get_futures_options_chain(sym)
+            # get_futures_options_chain(sym)
         if results.news:
             get_news()

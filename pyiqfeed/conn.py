@@ -1706,7 +1706,7 @@ class HistoryConn(FeedConn):
                              ('cond4', 'u1')])
 
     # Bar data is returned as a numpy array of this type.
-    bar_type = np.dtype([('date', 'M8[D]'), ('time', 'm8[us]'),
+    bar_type = np.dtype([('date', 'U26'),
                          ('open_p', 'f8'), ('high_p', 'f8'),
                          ('low_p', 'f8'), ('close_p', 'f8'),
                          ('tot_vlm', 'u8'), ('prd_vlm', 'u8'),
@@ -1861,7 +1861,7 @@ class HistoryConn(FeedConn):
             line_num = 0
             while res.raw_data and (line_num < res.num_pts):
                 dl = res.raw_data.popleft()
-                data[line_num]['date'] = dl[1]
+                data[line_num]['date'] = np.datetime64(dl[1])
                 data[line_num]['last'] = np.float64(dl[2])
                 data[line_num]['last_sz'] = np.int64(dl[3])
                 data[line_num]['tot_vlm'] = np.int64(dl[4])
@@ -2062,6 +2062,31 @@ class HistoryConn(FeedConn):
                     assert line_num >= res.num_pts
             return data
 
+    def _read_bars_arctic(self, req_id: str) -> np.array:
+        """Get buffer for req_id and transform to a numpy array of bars."""
+        res = self._get_data_buf(req_id)
+        if res.failed:
+            return np.array([res.err_msg], dtype='object')
+        else:
+            data = np.empty(res.num_pts, HistoryConn.bar_type)
+            line_num = 0
+            while res.raw_data and (line_num < res.num_pts):
+                dl = res.raw_data.popleft()
+                data[line_num]['date'] = np.datetime64(dl[1])
+                data[line_num]['high_p'] = np.float64(dl[2])
+                data[line_num]['low_p'] = np.float64(dl[3])
+                data[line_num]['open_p'] = np.float64(dl[4])
+                data[line_num]['close_p'] = np.float64(dl[5])
+                data[line_num]['tot_vlm'] = np.int64(dl[6])
+                data[line_num]['prd_vlm'] = np.int64(dl[7])
+                data[line_num]['num_trds'] = np.int64(dl[8])
+                line_num += 1
+                if line_num >= res.num_pts:
+                    assert len(res.raw_data) == 0
+                if len(res.raw_data) == 0:
+                    assert line_num >= res.num_pts
+            return data
+
     def request_bars(self,
                      ticker: str,
                      interval_len: int,
@@ -2103,7 +2128,7 @@ class HistoryConn(FeedConn):
             interval_type, label_at_begin))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_bars(req_id)
+        data = self._read_bars_arctic(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
@@ -2168,7 +2193,7 @@ class HistoryConn(FeedConn):
             bars_per_batch, interval_type, label_at_begin)
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_bars(req_id)
+        data = self._read_bars_arctic(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
@@ -2235,7 +2260,7 @@ class HistoryConn(FeedConn):
             ascend, req_id, bars_per_batch, interval_type, label_at_beginning))
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_bars(req_id)
+        data = self._read_bars_arctic(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
