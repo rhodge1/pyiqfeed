@@ -3284,8 +3284,7 @@ class BarConn(FeedConn):
 
         interval_data = self._empty_interval_msg
         interval_data['symbol'] = fields[2]
-        interval_data['date'], interval_data['time'] = fr.read_posix_ts(
-                fields[3])
+        interval_data['date'] = np.datetime64(fields[3])        # removed time field
         interval_data['open_p'] = np.float64(fields[4])
         interval_data['high_p'] = np.float64(fields[5])
         interval_data['low_p'] = np.float64(fields[6])
