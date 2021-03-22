@@ -620,16 +620,16 @@ class QuoteConn(FeedConn):
     # instances of QuoteConn. Use one for all stock subscriptions and one for
     # all options subscriptions. They can both update the same listener if
     # that is what you want.
-    quote_msg_map = {'Symbol': ('Symbol', 'S128', lambda x: x),
+    quote_msg_map = {'Symbol': ('Symbol', 'U128', lambda x: x),
                      '7 Day Yield': ('7 Day Yield', 'f8', fr.read_float64),
                      'Ask': ('Ask', 'f8', fr.read_float64),
                      'Ask Change': ('Ask Change', 'f8', fr.read_float64),
                      'Ask Market Center':
                          ('Ask Market Center', 'u1', fr.read_uint8),
                      'Ask Size': ('Ask Size', 'u8', fr.read_uint64),
-                     'Ask Time': ('Ask Time', 'u8', fr.read_hhmmssus),
+                     'Ask Time': ('Ask Time', 'U15', lambda x: x),
                      'Available Regions':
-                         ('Available Regions', 'S128', lambda x: x),
+                         ('Available Regions', 'U128', lambda x: x),
                      # TODO: Parse:
                      'Average Maturity':
                          ('Average Maturity', 'f8', fr.read_float64),
@@ -638,7 +638,7 @@ class QuoteConn(FeedConn):
                      'Bid Market Center':
                          ('Bid Market Center', 'u1', fr.read_uint8),
                      'Bid Size': ('Bid Size', 'u8', fr.read_uint64),
-                     'Bid Time': ('Bid Time', 'u8', fr.read_hhmmssus),
+                     'Bid Time': ('Bid Time', 'U15', lambda x: x),
                      'Change': ('Change', 'f8', fr.read_float64),
                      'Change From Open': (
                          'Change From Open', 'f8', fr.read_float64),
@@ -660,14 +660,14 @@ class QuoteConn(FeedConn):
                      'Extended Trade Size':
                          ('Extended Trade Size', 'u8', fr.read_uint64),
                      'Extended Trade Time':
-                         ('Extended Trade Time', 'u8', fr.read_hhmmssus),
+                         ('Extended Trade Time', 'U15', lambda x: x),
                      'Extended Trading Change':
                          ('Extended Trading Change', 'f8', fr.read_float64),
                      'Extended Trading Difference':
                          ('Extended Trading Difference', 'f8',
                           fr.read_float64),
                      'Financial Status Indicator':
-                         ('Financial Status Indicator', 'S1', lambda x: x),
+                         ('Financial Status Indicator', 'U1', lambda x: x),
                      # TODO: Parse:
                      'Fraction Display Code':
                          ('Fraction Display Code', 'u1', fr.read_uint8),
@@ -677,21 +677,21 @@ class QuoteConn(FeedConn):
                      'Last Market Center':
                          ('Last Market Center', 'u1', fr.read_uint8),
                      'Last Size': ('Last Size', 'u8', fr.read_uint64),
-                     'Last Time': ('Last Time', 'u8', fr.read_hhmmssus),
+                     'Last Time': ('Last Time', 'U15', lambda x: x),
                      'Low': ('Low', 'f8', fr.read_float64),
                      'Market Capitalization':
                          ('Market Capitalization', 'f8', fr.read_float64),
                      'Market Open':
                          ('Market Open', 'b1', fr.read_is_market_open),
                      'Message Contents':
-                         ('Message Contents', 'S9', lambda x: x),
+                         ('Message Contents', 'U9', lambda x: x),
                      # TODO: Parse:
                      'Most Recent Trade':
                          ('Most Recent Trade', 'f8', fr.read_float64),
                      'Most Recent Trade Aggressor':
                          ('Most Recent Trade Aggressor', 'u8', fr.read_uint8),
                      'Most Recent Trade Conditions':
-                         ('Most Recent Trade Conditions', 'S16', lambda x: x),
+                         ('Most Recent Trade Conditions', 'U16', lambda x: x),
                      # todo: Parse
                      'Most Recent Trade Date':
                          ('Most Recent Trade Date', 'M8[D]', fr.read_mmddccyy),
@@ -703,7 +703,7 @@ class QuoteConn(FeedConn):
                      'Most Recent Trade Size':
                          ('Most Recent Trade Size', 'u8', fr.read_uint64),
                      'Most Recent Trade Time':
-                         ('Most Recent Trade Time', 'u8', fr.read_hhmmssus),
+                         ('Most Recent Trade Time', 'U15', lambda x: x),
                      'Net Asset Value':
                          ('Net Asset Value', 'f8', fr.read_float64),
                      'Number of Trades Today':
