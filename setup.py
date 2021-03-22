@@ -5,7 +5,7 @@ from setuptools import setup
 
 setup(
     name='pyiqfeed',
-    version='0.961a',
+    version='1.002',
     description='Handles connections to IQFeed, the market data feed by DTN',
     url='https://github.com/akapur/pyiqfeed',
     author='Ashwin Kapur',

@@ -562,7 +562,7 @@ class QuoteConn(FeedConn):
                           "Security SubType"]
 
     # Type of numpy structured array used to return fundamental data.
-    fundamental_type = [('Symbol', 'S128'), ('Exchange ID', 'u8'),
+    fundamental_type = [('Symbol', 'U128'), ('Exchange ID', 'u8'),
                         ('PE', 'f8'),
                         ('Average Volume', 'f8'), ('52 Week High', 'f8'),
                         ('52 Week Low', 'f8'), ('Calendar Year High', 'f8'),
@@ -572,10 +572,10 @@ class QuoteConn(FeedConn):
                         ('Current Year EPS', 'f8'),
                         ('Next Year EPS', 'f8'),
                         ('Five-year Growth Percentage', 'f8'),
-                        ('Fiscal Year End', 'u1'), ('Company Name', 'S256'),
-                        ('Root Option Symbol', 'S256'),
+                        ('Fiscal Year End', 'u1'), ('Company Name', 'U256'),
+                        ('Root Option Symbol', 'U256'),
                         ('Percent Held By Institutions', 'f8'), ('Beta', 'f8'),
-                        ('Leaps', 'S128'), ('Current Assets', 'f8'),
+                        ('Leaps', 'U128'), ('Current Assets', 'f8'),
                         ('Current Liabilities', 'f8'),
                         ('Balance Sheet Date', 'M8[D]'),
                         ('Long-term Debt', 'f8'),
@@ -594,17 +594,17 @@ class QuoteConn(FeedConn):
                         ('Year End Close', 'f8'), ('Maturity Date', 'M8[D]'),
                         ('Coupon Rate', 'f8'), ('Expiration Date', 'M8[D]'),
                         ('Strike Price', 'f8'), ('NAICS', 'u8'),
-                        ('Exchange Root', 'S128'),
+                        ('Exchange Root', 'U128'),
                         ('Option Premium Multiplier', 'f8'),
                         ('Option Multiple Deliverable', 'u8'),
-                        ('Session Open Time', 'u8'),
-                        ('Session Close Time', 'u8'),
-                        ('Base Currency', 'S3'),
-                        ('Contract Size', 'S128'),
-                        ('Contract Months', 'S12'),
+                        ('Session Open Time', 'U8'),
+                        ('Session Close Time', 'U8'),
+                        ('Base Currency', 'U3'),
+                        ('Contract Size', 'U128'),
+                        ('Contract Months', 'U12'),
                         ('Minimum Tick Size', 'f8'),
                         ('First Delivery Date', 'M8[D]'),
-                        ('FIGI', 'S12'),
+                        ('FIGI', 'U12'),
                         ('Security SubType', 'u8')]
 
     # For quote updates (provided when the top of book quote changes or a
