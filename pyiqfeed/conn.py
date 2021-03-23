@@ -2459,7 +2459,7 @@ class MarketSummaryConn(FeedConn):
     host = FeedConn.host
     port = FeedConn.lookup_port
 
-    daily_type = np.dtype(
+    prices_type = np.dtype(
         [('Symbol', 'U128'),
          ('Exchange', 'u8'),
          ('Type', 'u8'),
@@ -2496,6 +2496,56 @@ class MarketSummaryConn(FeedConn):
          ('ExpirationDate', 'M8[D]'),
          ('Strike', 'f8'),
          ])
+
+    fund_type = np.dtype([
+        ('Symbol', 'U128'),
+        ('Description', 'U256'),
+        ('PeRatio', 'f8'),
+        ('AvgVolume', 'f8'),
+        ('DivYield', 'f8'),
+        ('DivAmount', 'f8'),
+        ('DivRate', 'f8'),
+        ('PayDate', 'M8[D]'),
+        ('ExDivDate', 'M8[D]'),
+        ('CurrentEps', 'f8'),
+        ('EstEps', 'f8'),
+        ('SIC', 'u8'),
+        ('Precision', 'u8'),
+        ('Display', 'u8'),
+        ('GrowthPercent', 'f8'),
+        ('FiscalYearEnd', 'u8'),
+        ('Volatility', 'f8'),
+        ('ListedMarket', 'u8'),
+        ('MaturityDate', 'M8[D]'),
+        ('OptionRoots', 'U256'),
+        ('CouponRate', 'f8'),
+        ('InstitutionalPercent', 'f8'),
+        ('YearEndClose', 'f8'),
+        ('Beta', 'f8'),
+        ('LEAPs', 'U256'),
+        ('WRAPs', 'U256'),
+        ('Assets', 'f8'),
+        ('Liabilities', 'f8'),
+        ('BalanceSheetDate', 'M8[D]'),
+        ('LongTermDebt', 'f8'),
+        ('CommonSharesOutstanding', 'f8'),
+        ('MarketCap', 'f8'),
+        ('52WeekHigh', 'f8'),
+        ('52WeekHighDate', 'M8[D]'),
+        ('52WeekLow', 'f8'),
+        ('52WeekLowDate', 'M8[D]'),
+        ('CalHigh', 'f8'),
+        ('CalHighDate', 'M8[D]'),
+        ('CalLow', 'f8'),
+        ('CalLowDate', 'M8[D]'),
+        ('Expiration', 'M8[D]'),
+        ('LastSplit', 'f8'),
+        ('LastSplitDate', 'M8[D]'),
+        ('PrevSplit', 'f8'),
+        ('PrevSplitDate', 'M8[D]'),
+        ('NAICS', 'u8'),
+        ('ShortInterest', 'f8')
+    ])
 
     def __init__(self, name: str = "MarketSummaryConn", host: str = FeedConn.host,
                  port: int = port):
@@ -2568,13 +2618,13 @@ class MarketSummaryConn(FeedConn):
         self._cleanup_request_data(req_id)
         return buf
 
-    def _read_summary(self, req_id: str) -> np.array:
+    def _read_mkt_summary(self, req_id: str) -> np.array:
         """Get buffer for req_id and convert to a numpy array of daily data."""
         res = self._get_data_buf(req_id)
         if res.failed:
             return np.array([res.err_msg], dtype='object')
         else:
-            data = np.empty(res.num_pts - 1, MarketSummaryConn.daily_type)
+            data = np.empty(res.num_pts - 1, MarketSummaryConn.prices_type)
             line_num = 0
             res.raw_data.popleft()  # remove initial header row
             while res.raw_data and (line_num < (res.num_pts - 1)):
@@ -2621,6 +2671,71 @@ class MarketSummaryConn(FeedConn):
                     assert line_num >= res.num_pts - 1
             return data
 
+    def _read_fund_summary(self, req_id: str) -> np.array:
+        """Get buffer for req_id and convert to a numpy array of daily data."""
+        res = self._get_data_buf(req_id)
+        if res.failed:
+            return np.array([res.err_msg], dtype='object')
+        else:
+            data = np.empty(res.num_pts - 1, MarketSummaryConn.fund_type)
+            line_num = 0
+            res.raw_data.popleft()  # remove initial header row
+            while res.raw_data and (line_num < (res.num_pts - 1)):
+                dl = res.raw_data.popleft()
+                data[line_num]['Symbol'] = dl[1]
+                data[line_num]['Description'] = dl[2]
+                data[line_num]['PeRatio'] = fr.read_float64(dl[3])
+                data[line_num]['AvgVolume'] = fr.read_float64(dl[4])
+                data[line_num]['DivYield'] = fr.read_float64(dl[5])
+                data[line_num]['DivAmount'] = fr.read_float64(dl[6])
+                data[line_num]['DivRate'] = fr.read_float64(dl[7])
+                data[line_num]['PayDate'] = fr.read_ccyymmdd_nat(dl[8])
+                data[line_num]['ExDivDate'] = fr.read_ccyymmdd_nat(dl[9])
+                data[line_num]['CurrentEps'] = fr.read_float64(dl[10])
+                data[line_num]['EstEps'] = fr.read_float64(dl[11])
+                data[line_num]['SIC'] = fr.read_int(dl[12])
+                data[line_num]['Precision'] = fr.read_int(dl[13])
+                data[line_num]['Display'] = fr.read_float64(dl[14])
+                data[line_num]['GrowthPercent'] = fr.read_float64(dl[15])
+                data[line_num]['FiscalYearEnd'] = fr.read_int(dl[16])
+                data[line_num]['Volatility'] = fr.read_float64(dl[17])
+                data[line_num]['ListedMarket'] = fr.read_int(dl[18])
+                data[line_num]['MaturityDate'] = fr.read_ccyymmdd_nat(dl[19])
+                data[line_num]['OptionRoots'] = dl[20]
+                data[line_num]['CouponRate'] = fr.read_float64(dl[21])
+                data[line_num]['InstitutionalPercent'] = fr.read_float64(dl[22])
+                data[line_num]['YearEndClose'] = fr.read_float64(dl[23])
+                data[line_num]['Beta'] = fr.read_float64(dl[24])
+                data[line_num]['LEAPs'] = dl[25]
+                data[line_num]['WRAPs'] = dl[26]
+                data[line_num]['Assets'] = fr.read_float64(dl[27])
+                data[line_num]['Liabilities'] = fr.read_float64(dl[28])
+                data[line_num]['BalanceSheetDate'] = fr.read_ccyymmdd_nat(dl[29])
+                data[line_num]['LongTermDebt'] = fr.read_float64(dl[30])
+                data[line_num]['CommonSharesOutstanding'] = fr.read_float64(dl[31])
+                data[line_num]['MarketCap'] = fr.read_float64(dl[32])
+                data[line_num]['52WeekHigh'] = fr.read_float64(dl[33])
+                data[line_num]['52WeekHighDate'] = fr.read_ccyymmdd_nat(dl[34])
+                data[line_num]['52WeekLow'] = fr.read_float64(dl[35])
+                data[line_num]['52WeekLowDate'] = fr.read_ccyymmdd_nat(dl[36])
+                data[line_num]['CalHigh'] = fr.read_float64(dl[37])
+                data[line_num]['CalHighDate'] = fr.read_ccyymmdd_nat(dl[38])
+                data[line_num]['CalLow'] = fr.read_float64(dl[39])
+                data[line_num]['CalLowDate'] = fr.read_ccyymmdd_nat(dl[40])
+                data[line_num]['Expiration'] = fr.read_ccyymmdd_nat(dl[41])
+                data[line_num]['LastSplit'] = fr.read_float64(dl[42])
+                data[line_num]['LastSplitDate'] = fr.read_ccyymmdd_nat(dl[43])
+                data[line_num]['PrevSplit'] = fr.read_float64(dl[44])
+                data[line_num]['PrevSplitDate'] = fr.read_ccyymmdd_nat(dl[45])
+                data[line_num]['NAICS'] = fr.read_int(dl[46])
+                data[line_num]['ShortInterest'] = fr.read_float64(dl[47])
+                line_num += 1
+                if line_num >= res.num_pts - 1:
+                    assert len(res.raw_data) == 0
+                if len(res.raw_data) == 0:
+                    assert line_num >= res.num_pts - 1
+            return data
+
     def request_eod_summary(self, security_type: int, group_id: int, eod_date: datetime, timeout: int = None):
         """
         Request market summary for security type/exchange group for a given date.
@@ -2639,7 +2754,7 @@ class MarketSummaryConn(FeedConn):
         req_cmd = f"EDS,{security_type},{group_id},{eod_date:%Y%m%d},{req_id}\r\n"
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_summary(req_id)
+        data = self._read_mkt_summary(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
@@ -2669,7 +2784,38 @@ class MarketSummaryConn(FeedConn):
         req_cmd = f"5MS,{security_type},{group_id},{req_id}\r\n"
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_summary(req_id)
+        data = self._read_mkt_summary(req_id)
+        if data.dtype == object:
+            iqfeed_err = str(data[0])
+            err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
+            if iqfeed_err == '!NO_DATA!':
+                raise NoDataError(err_msg)
+            elif iqfeed_err == "Unauthorized user ID.":
+                raise UnauthorizedError(err_msg)
+            else:
+                raise RuntimeError(err_msg)
+        else:
+            return data
+
+    def request_fundamental_summary(self, security_type: int, group_id: int, eod_date: datetime, timeout: int = None):
+        """
+        Request market summary for security type/exchange group for a given date.
+
+        :param security_type:
+        :param group_id:
+        :param eod_date: T
+        :param timeout: Wait timeout seconds. Default None
+        :return: A numpy array with dtype HistoryConn.daily_type
+
+        FDS,[Security Type],[Group ID],[Date],[RequestID]<CR><LF>
+
+        """
+        req_id = self._get_next_req_id()
+        self._setup_request_data(req_id)
+        req_cmd = f"FDS,{security_type},{group_id},{eod_date:%Y%m%d},{req_id}\r\n"
+        self._send_cmd(req_cmd)
+        self._req_event[req_id].wait(timeout=timeout)
+        data = self._read_fund_summary(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
