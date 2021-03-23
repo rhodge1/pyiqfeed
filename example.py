@@ -387,6 +387,22 @@ def get_eod_summary(security_type: int, group_id: int, eod_date: datetime):
             print("No data returned because {0}".format(err))
 
 
+def get_5ms_summary(security_type: int, group_id: int):
+    """Historical Daily Data"""
+    hist_conn = iq.MarketSummaryConn(name="pyiqfeed-Example-mkt-summary-5ms")
+    hist_listener = iq.VerboseIQFeedListener("5ms Summary Listener")
+    hist_conn.add_listener(hist_listener)
+
+    with iq.ConnConnector([hist_conn]) as connector:
+        try:
+            daily_data = hist_conn.request_5min_summary(security_type, group_id)
+            print(daily_data.dtype.names)
+            print(daily_data)
+            print(f"shape={daily_data.shape}")
+        except (iq.NoDataError, iq.UnauthorizedError) as err:
+            print("No data returned because {0}".format(err))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run pyiqfeed example code")
     parser.add_argument('-l', action="store_true", dest='level_1',
@@ -413,6 +429,8 @@ if __name__ == "__main__":
                         help="News related stuff")
     parser.add_argument("-m", action='store_true', dest='eod_summary',
                         help="EOD Summary")
+    parser.add_argument("-5", action='store_true', dest='snap_summary',
+                        help="5min Summary")
     parser.add_argument("--syms", nargs='+', help="Symbols to use.")
     results = parser.parse_args()
 
@@ -449,4 +467,6 @@ if __name__ == "__main__":
         if results.news:
             get_news()
         if results.eod_summary:
-            get_eod_summary(9, 34, datetime.datetime(2021, 3, 22))
+            get_eod_summary(8, 35, datetime.datetime(2021, 3, 22))
+        if results.snap_summary:
+            get_5ms_summary(9, 34)

@@ -2527,7 +2527,7 @@ class MarketSummaryConn(FeedConn):
             err_msg = "Unknown Error"
             if len(fields) > 2:
                 if fields[2] != "":
-                    err_msg = fields[2]
+                    err_msg = '.'.join(fields[2:])
             self._req_err[req_id] = err_msg
         elif '!ENDMSG!' == fields[1]:
             self._req_event[req_id].set()
@@ -2568,7 +2568,7 @@ class MarketSummaryConn(FeedConn):
         self._cleanup_request_data(req_id)
         return buf
 
-    def _read_eod_summary(self, req_id: str) -> np.array:
+    def _read_summary(self, req_id: str) -> np.array:
         """Get buffer for req_id and convert to a numpy array of daily data."""
         res = self._get_data_buf(req_id)
         if res.failed:
@@ -2639,7 +2639,37 @@ class MarketSummaryConn(FeedConn):
         req_cmd = f"EDS,{security_type},{group_id},{eod_date:%Y%m%d},{req_id}\r\n"
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
-        data = self._read_eod_summary(req_id)
+        data = self._read_summary(req_id)
+        if data.dtype == object:
+            iqfeed_err = str(data[0])
+            err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
+            if iqfeed_err == '!NO_DATA!':
+                raise NoDataError(err_msg)
+            elif iqfeed_err == "Unauthorized user ID.":
+                raise UnauthorizedError(err_msg)
+            else:
+                raise RuntimeError(err_msg)
+        else:
+            return data
+
+    def request_5min_summary(self, security_type: int, group_id: int, timeout: int = None):
+        """
+        Request market summary for security type/exchange group for a given date.
+
+        :param security_type:
+        :param group_id:
+        :param timeout: Wait timeout seconds. Default None
+        :return: A numpy array with dtype HistoryConn.daily_type
+
+        5MS,[Security Type],[Group ID],[RequestID]<CR><LF>
+
+        """
+        req_id = self._get_next_req_id()
+        self._setup_request_data(req_id)
+        req_cmd = f"5MS,{security_type},{group_id},{req_id}\r\n"
+        self._send_cmd(req_cmd)
+        self._req_event[req_id].wait(timeout=timeout)
+        data = self._read_summary(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
