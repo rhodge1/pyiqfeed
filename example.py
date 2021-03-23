@@ -371,6 +371,22 @@ def get_news():
         print("")
 
 
+def get_eod_summary(security_type: int, group_id: int, eod_date: datetime):
+    """Historical Daily Data"""
+    hist_conn = iq.MarketSummaryConn(name="pyiqfeed-Example-mkt-summary-eod")
+    hist_listener = iq.VerboseIQFeedListener("EOD Summary Listener")
+    hist_conn.add_listener(hist_listener)
+
+    with iq.ConnConnector([hist_conn]) as connector:
+        try:
+            daily_data = hist_conn.request_eod_summary(security_type, group_id, eod_date)
+            print(daily_data.dtype.names)
+            print(daily_data)
+            print(f"shape={daily_data.shape}")
+        except (iq.NoDataError, iq.UnauthorizedError) as err:
+            print("No data returned because {0}".format(err))
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run pyiqfeed example code")
     parser.add_argument('-l', action="store_true", dest='level_1',
@@ -395,6 +411,8 @@ if __name__ == "__main__":
                         help="Lookups and Chains")
     parser.add_argument("-n", action='store_true', dest='news',
                         help="News related stuff")
+    parser.add_argument("-m", action='store_true', dest='eod_summary',
+                        help="EOD Summary")
     parser.add_argument("--syms", nargs='+', help="Symbols to use.")
     results = parser.parse_args()
 
@@ -419,14 +437,16 @@ if __name__ == "__main__":
                                     bar_unit='s',
                                     num_bars=100)
         if results.historical_daily_data:
-            get_daily_data(ticker=sym, num_days=2000)
+            get_daily_data(ticker=sym, num_days=20)
         if results.reference_data:
             get_reference_data()
         if results.lookups_and_chains:
-            get_ticker_lookups(sym)
+            # get_ticker_lookups(sym)
             # get_equity_option_chain(sym)
             # get_futures_chain(sym)
             # get_futures_spread_chain(sym)
-            # get_futures_options_chain(sym)
+            get_futures_options_chain(sym)
         if results.news:
             get_news()
+        if results.eod_summary:
+            get_eod_summary(9, 34, datetime.datetime(2021, 3, 22))

@@ -1,7 +1,7 @@
 # coding=utf-8
 """Export only the names below when you import pyiqfeed"""
 
-from .conn import QuoteConn, AdminConn, HistoryConn, TableConn, LookupConn
+from .conn import QuoteConn, AdminConn, HistoryConn, TableConn, LookupConn, MarketSummaryConn
 from .conn import BarConn, NewsConn
 from .conn import FeedConn
 

@@ -928,8 +928,8 @@ class QuoteConn(FeedConn):
         msg['Exchange Root'] = fields[46]
         msg['Option Premium Multiplier'] = fr.read_float64(fields[47])
         msg['Option Multiple Deliverable'] = fr.read_uint8(fields[48])
-        msg['Session Open Time'] = fr.read_hhmmss(fields[49])
-        msg['Session Close Time'] = fr.read_hhmmss(fields[50])
+        msg['Session Open Time'] = fields[49]
+        msg['Session Close Time'] = fields[50]
         msg['Base Currency'] = fields[51]
         msg['Contract Size'] = fields[52]
         msg['Contract Months'] = fields[53]
@@ -2440,6 +2440,206 @@ class HistoryConn(FeedConn):
         self._send_cmd(req_cmd)
         self._req_event[req_id].wait(timeout=timeout)
         data = self._read_daily_data(req_id)
+        if data.dtype == object:
+            iqfeed_err = str(data[0])
+            err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
+            if iqfeed_err == '!NO_DATA!':
+                raise NoDataError(err_msg)
+            elif iqfeed_err == "Unauthorized user ID.":
+                raise UnauthorizedError(err_msg)
+            else:
+                raise RuntimeError(err_msg)
+        else:
+            return data
+
+
+class MarketSummaryConn(FeedConn):
+    """
+    """
+    host = FeedConn.host
+    port = FeedConn.lookup_port
+
+    daily_type = np.dtype(
+        [('Symbol', 'U128'),
+         ('Exchange', 'u8'),
+         ('Type', 'u8'),
+         ('Last', 'f8'),
+         ('TradeSize', 'u8'),
+         ('TradedMarket', 'u8'),
+         ('TradeDate', 'M8[D]'),
+         ('TradeTime', 'U8'),
+         ('Open', 'f8'),
+         ('High', 'f8'),
+         ('Low', 'f8'),
+         ('Close', 'f8'),
+         ('Bid', 'f8'),
+         ('BidMarket', 'u8'),
+         ('BidSize', 'u8'),
+         ('Ask', 'f8'),
+         ('AskMarket', 'u8'),
+         ('AskSize', 'u8'),
+         ('Volume', 'u8'),
+         ('PDayVolume', 'u8'),
+         ('UpVolume', 'u8'),
+         ('DownVolume', 'u8'),
+         ('NeutralVolume', 'u8'),
+         ('TradeCount', 'u8'),
+         ('UpTrades', 'u8'),
+         ('DownTrades', 'u8'),
+         ('NeutralTrades', 'u8'),
+         ('VWAP', 'f8'),
+         ('MutualDiv', 'f8'),
+         ('SevenDayYield', 'f8'),
+         ('OpenInterest', 'u8'),
+         ('Settlement', 'f8'),
+         ('SettlementDate', 'M8[D]'),
+         ('ExpirationDate', 'M8[D]'),
+         ('Strike', 'f8'),
+         ])
+
+    def __init__(self, name: str = "MarketSummaryConn", host: str = FeedConn.host,
+                 port: int = port):
+        super().__init__(name, host, port)
+        self._set_message_mappings()
+        self._req_num = 0
+        self._req_buf = {}
+        self._req_numlines = {}
+        self._req_event = {}
+        self._req_failed = {}
+        self._req_err = {}
+        self._req_lock = threading.RLock()
+        self._req_num_lock = threading.RLock()
+
+    def _set_message_mappings(self) -> None:
+        """Set the message mappings"""
+        super()._set_message_mappings()
+        self._pf_dict['M'] = self._process_datum
+
+    def _send_connect_message(self):
+        """The lookup socket does not accept connect messages."""
+        pass
+
+    def _process_datum(self, fields: Sequence[str]) -> None:
+        req_id = fields[0]
+        if 'E' == fields[1]:
+            # Error
+            self._req_failed[req_id] = True
+            err_msg = "Unknown Error"
+            if len(fields) > 2:
+                if fields[2] != "":
+                    err_msg = fields[2]
+            self._req_err[req_id] = err_msg
+        elif '!ENDMSG!' == fields[1]:
+            self._req_event[req_id].set()
+        else:
+            self._req_buf[req_id].append(fields)
+            self._req_numlines[req_id] += 1
+
+    def _get_next_req_id(self) -> str:
+        with self._req_num_lock:
+            req_id = "M_%.10d" % self._req_num
+            self._req_num += 1
+            return req_id
+
+    def _cleanup_request_data(self, req_id: str) -> None:
+        with self._req_lock:
+            del self._req_failed[req_id]
+            del self._req_err[req_id]
+            del self._req_buf[req_id]
+            del self._req_numlines[req_id]
+
+    def _setup_request_data(self, req_id: str) -> None:
+        """Setup empty buffers and other variables for a request."""
+        with self._req_lock:
+            self._req_buf[req_id] = deque()
+            self._req_numlines[req_id] = 0
+            self._req_failed[req_id] = False
+            self._req_err[req_id] = ""
+            self._req_event[req_id] = threading.Event()
+
+    def _get_data_buf(self, req_id: str) -> FeedConn.databuf:
+        """Get the data buffer associated with a specific request."""
+        with self._req_lock:
+            buf = FeedConn.databuf(
+                failed=self._req_failed[req_id],
+                err_msg=self._req_err[req_id],
+                num_pts=self._req_numlines[req_id],
+                raw_data=self._req_buf[req_id])
+        self._cleanup_request_data(req_id)
+        return buf
+
+    def _read_eod_summary(self, req_id: str) -> np.array:
+        """Get buffer for req_id and convert to a numpy array of daily data."""
+        res = self._get_data_buf(req_id)
+        if res.failed:
+            return np.array([res.err_msg], dtype='object')
+        else:
+            data = np.empty(res.num_pts - 1, MarketSummaryConn.daily_type)
+            line_num = 0
+            res.raw_data.popleft()  # remove initial header row
+            while res.raw_data and (line_num < (res.num_pts - 1)):
+                dl = res.raw_data.popleft()
+                data[line_num]['Symbol'] = dl[1]
+                data[line_num]['Exchange'] = np.uint64(dl[2])
+                data[line_num]['Type'] = np.uint64(dl[3])
+                data[line_num]['Last'] = fr.read_float64(dl[4])
+                data[line_num]['TradeSize'] = fr.read_int(dl[5])
+                data[line_num]['TradedMarket'] = fr.read_int(dl[6])
+                data[line_num]['TradeDate'] = fr.read_ccyymmdd(dl[7])
+                data[line_num]['TradeTime'] = dl[8]
+                data[line_num]['Open'] = fr.read_float64(dl[9])
+                data[line_num]['High'] = fr.read_float64(dl[10])
+                data[line_num]['Low'] = fr.read_float64(dl[11])
+                data[line_num]['Close'] = fr.read_float64(dl[12])
+                data[line_num]['Bid'] = fr.read_float64(dl[13])
+                data[line_num]['BidMarket'] = fr.read_int(dl[14])
+                data[line_num]['BidSize'] = fr.read_int(dl[15])
+                data[line_num]['Ask'] = fr.read_float64(dl[16])
+                data[line_num]['AskMarket'] = fr.read_int(dl[17])
+                data[line_num]['AskSize'] = fr.read_int(dl[18])
+                data[line_num]['Volume'] = fr.read_int(dl[19])
+                data[line_num]['PDayVolume'] = fr.read_int(dl[20])
+                data[line_num]['UpVolume'] = fr.read_int(dl[21])
+                data[line_num]['DownVolume'] = fr.read_int(dl[22])
+                data[line_num]['NeutralVolume'] = fr.read_int(dl[23])
+                data[line_num]['TradeCount'] = fr.read_int(dl[24])
+                data[line_num]['UpTrades'] = fr.read_int(dl[25])
+                data[line_num]['DownTrades'] = fr.read_int(dl[26])
+                data[line_num]['NeutralTrades'] = fr.read_int(dl[27])
+                data[line_num]['VWAP'] = fr.read_float64(dl[28])
+                data[line_num]['MutualDiv'] = fr.read_float64(dl[29])
+                data[line_num]['SevenDayYield'] = fr.read_float64(dl[30])
+                data[line_num]['OpenInterest'] = fr.read_int(dl[31])
+                data[line_num]['Settlement'] = fr.read_float64(dl[32])
+                data[line_num]['SettlementDate'] = fr.read_ccyymmdd(dl[33])
+                data[line_num]['ExpirationDate'] = fr.read_ccyymmdd(dl[34])
+                data[line_num]['Strike'] = fr.read_float64(dl[35])
+                line_num += 1
+                if line_num >= res.num_pts - 1:
+                    assert len(res.raw_data) == 0
+                if len(res.raw_data) == 0:
+                    assert line_num >= res.num_pts - 1
+            return data
+
+    def request_eod_summary(self, security_type: int, group_id: int, eod_date: datetime, timeout: int = None):
+        """
+        Request market summary for security type/exchange group for a given date.
+
+        :param security_type:
+        :param group_id:
+        :param eod_date: T
+        :param timeout: Wait timeout seconds. Default None
+        :return: A numpy array with dtype HistoryConn.daily_type
+
+        EDS,[Security Type],[Group ID],[Date],[RequestID]<CR><LF>
+
+        """
+        req_id = self._get_next_req_id()
+        self._setup_request_data(req_id)
+        req_cmd = f"EDS,{security_type},{group_id},{eod_date:%Y%m%d},{req_id}\r\n"
+        self._send_cmd(req_cmd)
+        self._req_event[req_id].wait(timeout=timeout)
+        data = self._read_eod_summary(req_id)
         if data.dtype == object:
             iqfeed_err = str(data[0])
             err_msg = "Request: %s, Error: %s" % (req_cmd, iqfeed_err)
