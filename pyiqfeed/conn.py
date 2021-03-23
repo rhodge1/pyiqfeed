@@ -2585,7 +2585,7 @@ class MarketSummaryConn(FeedConn):
                 data[line_num]['Last'] = fr.read_float64(dl[4])
                 data[line_num]['TradeSize'] = fr.read_int(dl[5])
                 data[line_num]['TradedMarket'] = fr.read_int(dl[6])
-                data[line_num]['TradeDate'] = fr.read_ccyymmdd(dl[7])
+                data[line_num]['TradeDate'] = fr.read_ccyymmdd_nat(dl[7])
                 data[line_num]['TradeTime'] = dl[8]
                 data[line_num]['Open'] = fr.read_float64(dl[9])
                 data[line_num]['High'] = fr.read_float64(dl[10])
@@ -2611,8 +2611,8 @@ class MarketSummaryConn(FeedConn):
                 data[line_num]['SevenDayYield'] = fr.read_float64(dl[30])
                 data[line_num]['OpenInterest'] = fr.read_int(dl[31])
                 data[line_num]['Settlement'] = fr.read_float64(dl[32])
-                data[line_num]['SettlementDate'] = fr.read_ccyymmdd(dl[33])
-                data[line_num]['ExpirationDate'] = fr.read_ccyymmdd(dl[34])
+                data[line_num]['SettlementDate'] = fr.read_ccyymmdd_nat(dl[33])
+                data[line_num]['ExpirationDate'] = fr.read_ccyymmdd_nat(dl[34])
                 data[line_num]['Strike'] = fr.read_float64(dl[35])
                 line_num += 1
                 if line_num >= res.num_pts - 1:

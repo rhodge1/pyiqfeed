@@ -181,6 +181,18 @@ def read_ccyymmdd(field: str) -> np.datetime64:
         return np.datetime64(datetime.date(year=1, month=1, day=1), 'D')
 
 
+def read_ccyymmdd_nat(field: str) -> np.datetime64:
+    """Read a CCYYMMDD field and return a np.datetime64('D') type."""
+    if field != "":
+        year = int(field[0:4])
+        month = int(field[4:6])
+        day = int(field[6:8])
+        return np.datetime64(
+            datetime.date(year=year, month=month, day=day), 'D')
+    else:
+        return np.datetime64("NaT")
+
+
 def read_timestamp_msg(dt_tm: str) -> Tuple[np.datetime64, int]:
     """Read a CCYYMMDD HH:MM:SS field."""
     if dt_tm != "":
