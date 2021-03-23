@@ -1,7 +1,7 @@
 # pyiqfeed 
 
 Reads and parses data from IQFeed (http://www.iqfeed.net). Now supports
-API version 6.0.
+API version 6.1.
 
 You likely want DTN's API docs handy. They are available at:
 
